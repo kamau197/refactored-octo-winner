@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <style>
+    body { margin:0; font-family:Arial; display:flex; height:100vh; }
+    .sidebar {
+      width:220px;
+      background:#1e293b;
+      color:white;
+      padding:20px;
+    }
+    .sidebar button {
+      width:100%;
+      padding:10px;
+      margin:10px 0;
+      border:none;
+      background:#334155;
+      color:white;
+      cursor:pointer;
+    }
+    .content {
+      flex:1;
+      padding:20px;
+    }
+    input, button.action {
+      padding:8px;
+      margin:5px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h3>Menu</h3>
+  <button onclick="showEvents()">Event Page</button>
+  <button onclick="showNotifications()">Notifications</button>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="content" id="content"></div>
+
+<script>
+
+const token = localStorage.getItem("token");
+if(!token) window.location.href="login.html";
+
+function logout(){
+  localStorage.removeItem("token");
+  window.location.href="login.html";
+}
+
+function showEvents(){
+  document.getElementById("content").innerHTML = `
+    <h2>Event Page</h2>
+    <input id="targetEmail" placeholder="Target User Email"><br>
+    <button class="action" onclick="sendFriend()">Let's Be Friends</button>
+    <button class="action" onclick="makePayment()">Make Payment</button>
+  `;
+}
+
+function showNotifications(){
+  fetch("http://localhost:3000/notifications", {
+    headers:{ Authorization:`Bearer ${token}` }
+  })
+  .then(res=>res.json())
+  .then(data=>{
+    let html="<h2>Notifications</h2>";
+    data.forEach(n=>{
+      html+=`<p>${n.message}</p>`;
+    });
+    document.getElementById("content").innerHTML=html;
+  });
+}
+
+async function sendFriend(){
+  const targetEmail=document.getElementById("targetEmail").value;
+
+  const res=await fetch("http://localhost:3000/send-friend-request",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:`Bearer ${token}`
+    },
+    body:JSON.stringify({targetEmail})
+  });
+
+  const data=await res.json();
+  alert(data.message || data.error);
+}
+
+async function makePayment(){
+  const targetEmail=document.getElementById("targetEmail").value;
+
+  const res=await fetch("http://localhost:3000/make-payment",{
+    method:"POST",
+    headers:{
+      "Content-Type":"application/json",
+      Authorization:`Bearer ${token}`
+    },
+    body:JSON.stringify({
+      targetEmail,
+      amount:100
+    })
+  });
+
+  const data=await res.json();
+  alert(data.message || data.error);
+}
+
+showEvents(); // default page
+</script>
+
+</body>
+</html>
